@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ableton Device Loader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .controls-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-section h3 {
+            margin-bottom: 15px;
+            color: #4ecdc4;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+
+        .status-dot.connected {
+            background: #2ed573;
+        }
+
+        .add-device-form {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input, select, button {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        input, select {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .preset-controls {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+            min-height: 200px;
+        }
+
+        .device-btn {
+            padding: 18px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 500;
+            font-size: 14px;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .device-btn:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #4ecdc4;
+            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.3);
+        }
+
+        .device-btn:active {
+            transform: translateY(-1px);
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+        }
+
+        .device-btn.loading {
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            animation: pulse 1s infinite;
+        }
+
+        .device-btn .remove-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            background: #ff4757;
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .device-btn:hover .remove-btn {
+            display: flex;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .controls-panel {
+                grid-template-columns: 1fr;
+            }
+            
+            .device-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+            
+            .preset-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Ableton Device Loader</h1>
+            <p>Custom presets for your workflow</p>
+        </div>
+
+        <div class="controls-panel">
+            <div class="control-section">
+                <h3>Connection</h3>
+                <div class="connection-status">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="connectionText">Connecting to Ableton...</span>
+                </div>
+                <input type="text" id="abletonIP" placeholder="Ableton IP" value="127.0.0.1">
+                <button onclick="connect()">Connect</button>
+            </div>
+
+            <div class="control-section">
+                <h3>Add Device</h3>
+                <div class="add-device-form">
+                    <input type="text" id="deviceName" placeholder="Device name (e.g., Operator)">
+                    <button onclick="addDevice()">Add</button>
+                </div>
+                <select id="categorySelect">
+                    <option value="instruments">Instruments</option>
+                    <option value="audio_effects">Audio Effects</option>
+                    <option value="midi_effects">MIDI Effects</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h3>Presets</h3>
+            <div class="preset-controls">
+                <input type="text" id="presetName" placeholder="Preset name">
+                <button onclick="savePreset()">Save Preset</button>
+                <button onclick="resetToDefault()">Reset to Default</button>
+            </div>
+            <div class="preset-controls">
+                <select id="presetSelect" onchange="loadPreset()">
+                    <option value="">Select preset...</option>
+                </select>
+                <button onclick="exportPreset()">Export</button>
+                <button onclick="document.getElementById('importFile').click()">Import</button>
+            </div>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importPreset()">
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('instruments')">Instruments</button>
+            <button class="tab-btn" onclick="showTab('audio_effects')">Audio Effects</button>
+            <button class="tab-btn" onclick="showTab('midi_effects')">MIDI Effects</button>
+            <button class="tab-btn" onclick="showTab('custom')">Custom</button>
+        </div>
+
+        <div id="instruments" class="device-grid">
+            <!-- Will be populated by JavaScript -->
+        </div>
+
+        <div id="audio_effects" class="device-grid hidden">
+            <!-- Will be populated by JavaScript -->
+        </div>
+
+        <div id="midi_effects" class="device-grid hidden">
+            <!-- Will be populated by JavaScript -->
+        </div>
+
+        <div id="custom" class="device-grid hidden">
+            <!-- Will be populated by JavaScript -->
+        </div>
+
+        <div class="log" id="log">
+            <div>Device Loader initializing...</div>
+        </div>
+    </div>
+
+    <script>
+        // FIXED: Define everything explicitly and simply
+        
+        // Default devices from your Max patch
+        const DEFAULT_DEVICES = {
+            instruments: [
+                'Analog', 'Collision', 'Drift', 'Drum Rack', 'Drum Sampler', 'Electric', 
+                'External Instrument', 'Impulse', 'Instrument Rack', 'Meld', 'Operator', 
+                'Sampler', 'Simpler', 'Tension', 'Wavetable'
+            ],
+            audio_effects: [
+                'Amp', 'Audio Effect Rack', 'Auto Filter', 'Auto Pan', 'Auto Shift', 
+                'Beat Repeat', 'Cabinet', 'Channel EQ', 'Chorus-Ensemble', 'Compressor', 
+                'Corpus', 'Delay', 'Drum Buss', 'Dynamic Tube', 'Echo', 'EQ Eight', 
+                'EQ Three', 'Erosion', 'External Audio Effect', 'Filter Delay', 'Flanger', 
+                'Frequency Shifter', 'Gate', 'Glue Compressor', 'Grain Delay', 'Hybrid Reverb', 
+                'Limiter', 'Looper', 'Multiband Dynamics', 'OTT.adv', 'Overdrive', 'Pedal', 
+                'Phaser', 'Redux', 'Resonators', 'Reverb', 'Roar', 'Saturator', 'Shifter', 
+                'Spectral Resonator', 'Spectral Time', 'Spectrum', 'Tuner', 'Utility', 
+                'Vinyl Distortion', 'Vocoder'
+            ],
+            midi_effects: [
+                'Arpeggiator', 'CC Control', 'Chord', 'Note Length', 'Pitch', 'Random', 
+                'Scale', 'Velocity'
+            ],
+            custom: []
+        };
+
+        // Global state
+        let devices = {};
+        let isConnected = false;
+        let currentTab = 'instruments';
+
+        // Initialize everything
+        function init() {
+            log('Starting initialization...');
+            
+            // Clear storage first (for testing)
+            // localStorage.removeItem('abletonDevices');
+            
+            // Load devices
+            loadDevices();
+            
+            // Render UI
+            renderAllDevices();
+            loadPresets();
+            
+            // Try to connect
+            autoConnect();
+            
+            log('Initialization complete');
+        }
+
+        function loadDevices() {
+            const saved = localStorage.getItem('abletonDevices');
+            
+            if (saved) {
+                try {
+                    devices = JSON.parse(saved);
+                    log('Loaded saved devices');
+                } catch (e) {
+                    log('Error loading saved devices, using defaults');
+                    devices = JSON.parse(JSON.stringify(DEFAULT_DEVICES));
+                }
+            } else {
+                log('No saved devices, loading defaults');
+                devices = JSON.parse(JSON.stringify(DEFAULT_DEVICES));
+                saveDevices();
+            }
+
+            // Ensure all categories exist
+            if (!devices.instruments) devices.instruments = DEFAULT_DEVICES.instruments.slice();
+            if (!devices.audio_effects) devices.audio_effects = DEFAULT_DEVICES.audio_effects.slice();
+            if (!devices.midi_effects) devices.midi_effects = DEFAULT_DEVICES.midi_effects.slice();
+            if (!devices.custom) devices.custom = [];
+
+            log(`Loaded ${devices.instruments.length} instruments, ${devices.audio_effects.length} audio effects, ${devices.midi_effects.length} MIDI effects`);
+        }
+
+        function saveDevices() {
+            localStorage.setItem('abletonDevices', JSON.stringify(devices));
+            log('Devices saved to storage');
+        }
+
+        function renderAllDevices() {
+            log('Rendering all devices...');
+            
+            Object.keys(devices).forEach(category => {
+                renderCategory(category);
+            });
+        }
+
+        function renderCategory(category) {
+            const container = document.getElementById(category);
+            if (!container) {
+                log(`Warning: No container found for ${category}`);
+                return;
+            }
+
+            container.innerHTML = '';
+
+            if (!devices[category] || devices[category].length === 0) {
+                container.innerHTML = `<div class="empty-state">No ${category.replace('_', ' ')} added yet. Use "Reset to Default" to load standard devices.</div>`;
+                return;
+            }
+
+            devices[category].forEach(deviceName => {
+                const btn = document.createElement('div');
+                btn.className = 'device-btn';
+                btn.innerHTML = `
+                    ${deviceName}
+                    <button class="remove-btn" onclick="removeDevice('${category}', '${deviceName}')" title="Remove">×</button>
+                `;
+                btn.onclick = (e) => {
+                    if (e.target.classList.contains('remove-btn')) return;
+                    loadDevice(deviceName);
+                };
+                container.appendChild(btn);
+            });
+
+            log(`Rendered ${devices[category].length} devices in ${category}`);
+        }
+
+        function showTab(tabName) {
+            // Hide all grids
+            document.querySelectorAll('.device-grid').forEach(grid => {
+                grid.classList.add('hidden');
+            });
+            
+            // Show selected grid
+            const selectedGrid = document.getElementById(tabName);
+            if (selectedGrid) {
+                selectedGrid.classList.remove('hidden');
+            }
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Find and activate clicked button
+            const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => 
+                btn.textContent.toLowerCase().includes(tabName.replace('_', ' '))
+            );
+            if (clickedBtn) {
+                clickedBtn.classList.add('active');
+            }
+            
+            currentTab = tabName;
+            log(`Switched to ${tabName} tab`);
+        }
+
+        function addDevice() {
+            const name = document.getElementById('deviceName').value.trim();
+            const category = document.getElementById('categorySelect').value;
+            
+            if (!name) {
+                alert('Please enter a device name');
+                return;
+            }
+            
+            if (!devices[category]) {
+                devices[category] = [];
+            }
+            
+            if (devices[category].includes(name)) {
+                alert('Device already exists in this category');
+                return;
+            }
+            
+            devices[category].push(name);
+            saveDevices();
+            renderCategory(category);
+            
+            document.getElementById('deviceName').value = '';
+            log(`Added ${name} to ${category}`);
+        }
+
+        function removeDevice(category, deviceName) {
+            if (devices[category]) {
+                devices[category] = devices[category].filter(d => d !== deviceName);
+                saveDevices();
+                renderCategory(category);
+                log(`Removed ${deviceName} from ${category}`);
+            }
+        }
+
+        function resetToDefault() {
+            if (confirm('Reset to default devices? This will replace all current devices.')) {
+                devices = JSON.parse(JSON.stringify(DEFAULT_DEVICES));
+                saveDevices();
+                renderAllDevices();
+                log('Reset to default devices');
+            }
+        }
+
+        function loadDevice(deviceName) {
+            if (!isConnected) {
+                log('Not connected - simulating device load');
+            }
+            
+            // Visual feedback
+            const btn = Array.from(document.querySelectorAll('.device-btn')).find(b => 
+                b.textContent.includes(deviceName)
+            );
+            if (btn) {
+                btn.classList.add('loading');
+                setTimeout(() => btn.classList.remove('loading'), 2000);
+            }
+            
+            sendToMax(deviceName);
+            log(`Loading device: ${deviceName}`);
+        }
+
+        function sendToMax(deviceName) {
+            // This would send to your Max device
+            log(`Sending ${deviceName} to Max for Live`);
+            
+            // Actual HTTP request would go here
+            fetch(`http://127.0.0.1:8080/load-device`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ device: deviceName })
+            }).catch(() => {
+                log(`No Max device found (this is normal for testing)`);
+            });
+        }
+
+        function autoConnect() {
+            log('Scanning for Max device...');
+            // Simulate connection for now
+            setTimeout(() => {
+                updateStatus('disconnected', 'Max device not found (load .amxd file)');
+            }, 2000);
+        }
+
+        function connect() {
+            log('Manual connection attempt...');
+            autoConnect();
+        }
+
+        function updateStatus(status, text) {
+            const dot = document.getElementById('statusDot');
+            const textEl = document.getElementById('connectionText');
+            
+            if (dot) dot.className = `status-dot ${status === 'connected' ? 'connected' : ''}`;
+            if (textEl) textEl.textContent = text;
+        }
+
+        // Preset functions
+        function savePreset() {
+            const name = document.getElementById('presetName').value.trim();
+            if (!name) {
+                alert('Please enter a preset name');
+                return;
+            }
+            
+            const presets = JSON.parse(localStorage.getItem('abletonPresets') || '{}');
+            presets[name] = JSON.parse(JSON.stringify(devices));
+            localStorage.setItem('abletonPresets', JSON.stringify(presets));
+            
+            loadPresets();
+            document.getElementById('presetName').value = '';
+            log(`Saved preset: ${name}`);
+        }
+
+        function loadPresets() {
+            const presets = JSON.parse(localStorage.getItem('abletonPresets') || '{}');
+            const select = document.getElementById('presetSelect');
+            if (select) {
+                select.innerHTML = '<option value="">Select preset...</option>';
+                Object.keys(presets).forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        function loadPreset() {
+            const name = document.getElementById('presetSelect').value;
+            if (!name) return;
+            
+            const presets = JSON.parse(localStorage.getItem('abletonPresets') || '{}');
+            if (presets[name]) {
+                devices = JSON.parse(JSON.stringify(presets[name]));
+                saveDevices();
+                renderAllDevices();
+                log(`Loaded preset: ${name}`);
+            }
+        }
+
+        function exportPreset() {
+            const name = document.getElementById('presetName').value.trim() || 'MyPreset';
+            const data = {
+                name: name,
+                devices: devices,
+                exported: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            log(`Exported preset: ${name}`);
+        }
+
+        function importPreset() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.devices) {
+                        devices = data.devices;
+                        saveDevices();
+                        renderAllDevices();
+                        log(`Imported preset: ${data.name || 'Unknown'}`);
+                    }
+                } catch (error) {
+                    alert('Invalid preset file');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            if (logEl) {
+                const entry = document.createElement('div');
+                entry.innerHTML = `<span style="color: #666;">[${new Date().toLocaleTimeString()}]</span> ${message}`;
+                logEl.appendChild(entry);
+                logEl.scrollTop = logEl.scrollHeight;
+            }
+            console.log(message);
+        }
+
+        // Start everything when page loads
+        document.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
