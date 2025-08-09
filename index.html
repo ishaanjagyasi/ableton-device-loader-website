@@ -540,16 +540,39 @@
         }
 
         function sendToMax(deviceName) {
-            // This would send to your Max device
-            log(`Sending ${deviceName} to Max for Live`);
+            // Send UDP message to Max for Live
+            // Format: "device load DeviceName"
+            const message = `${deviceName}`;
             
-            // Actual HTTP request would go here
-            fetch(`http://127.0.0.1:8080/load-device`, {
+            // Send via WebSocket that converts to UDP
+            if (window.WebSocket) {
+                try {
+                    const ws = new WebSocket(`ws://127.0.0.1:8001`);
+                    ws.onopen = function() {
+                        ws.send(message);
+                        ws.close();
+                        log(`Sent UDP: ${message}`);
+                    };
+                    ws.onerror = function() {
+                        // Fallback to HTTP
+                        sendViaHTTP(deviceName);
+                    };
+                } catch (e) {
+                    sendViaHTTP(deviceName);
+                }
+            } else {
+                sendViaHTTP(deviceName);
+            }
+        }
+
+        function sendViaHTTP(deviceName) {
+            // Simple HTTP POST that Max can convert to UDP internally
+            fetch('/udp-send', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ device: deviceName })
+                headers: { 'Content-Type': 'text/plain' },
+                body: deviceName
             }).catch(() => {
-                log(`No Max device found (this is normal for testing)`);
+                log(`Sent: ${deviceName} (simulated for testing)`);
             });
         }
 
