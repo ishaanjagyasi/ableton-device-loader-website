@@ -338,7 +338,7 @@
     </div>
 
     <script>
-        // COMPLETE HTTPS/HTTP FALLBACK WEB APP
+        // COMPLETE SIMPLE HTTP-ONLY WEB APP
         
         // Default devices from your Max patch
         const DEFAULT_DEVICES = {
@@ -369,8 +369,6 @@
         let devices = {};
         let isConnected = false;
         let currentTab = 'instruments';
-        let connectedProtocol = 'HTTP';
-        let connectedPort = 8080;
 
         // Initialize everything
         function init() {
@@ -543,7 +541,7 @@
             log(`Loading device: ${deviceName}`);
         }
 
-        // HTTPS/HTTP FALLBACK FUNCTIONALITY
+        // SIMPLE HTTP-ONLY FUNCTIONALITY
         function sendToMax(deviceName) {
             const serverIP = document.getElementById('abletonIP').value.trim();
             
@@ -552,7 +550,7 @@
                 return;
             }
             
-            log(`Sending device "${deviceName}" to server at ${serverIP}`);
+            log(`Sending device "${deviceName}" to server at ${serverIP}:8080`);
             sendViaHTTP(deviceName, serverIP);
         }
 
@@ -562,69 +560,33 @@
                 return;
             }
             
-            const requestData = {
-                device: deviceName
-            };
-            
-            log(`Sending POST with data:`, requestData);
-            
-            // Try HTTPS first, then fallback to HTTP
-            tryHTTPS(serverIP, requestData)
-                .then(result => {
-                    log(`✅ Successfully sent "${deviceName}" to Max via HTTPS!`);
-                    updateStatus('connected', `Connected to ${serverIP}:8443 (HTTPS)`);
-                    connectedProtocol = 'HTTPS';
-                    connectedPort = 8443;
-                })
-                .catch(httpsError => {
-                    log('HTTPS failed, trying HTTP...');
-                    return tryHTTP(serverIP, requestData)
-                        .then(result => {
-                            log(`✅ Successfully sent "${deviceName}" to Max via HTTP!`);
-                            updateStatus('connected', `Connected to ${serverIP}:8080 (HTTP)`);
-                            connectedProtocol = 'HTTP';
-                            connectedPort = 8080;
-                        });
-                })
-                .catch(error => {
-                    log(`❌ Error sending to Max: ${error.message}`);
-                    updateStatus('disconnected', `Connection failed: ${error.message}`);
-                });
-        }
-
-        function tryHTTPS(serverIP, requestData) {
-            const url = `https://${serverIP}:8443/load`;
-            log(`Trying HTTPS: ${url}`);
-            
-            return fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestData)
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTPS failed with status ${response.status}`);
-                }
-                return response.text();
-            });
-        }
-
-        function tryHTTP(serverIP, requestData) {
             const url = `http://${serverIP}:8080/load`;
-            log(`Trying HTTP: ${url}`);
+            const requestData = { device: deviceName };
             
-            return fetch(url, {
+            log(`Sending POST to ${url} with data:`, requestData);
+            
+            fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(requestData)
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP failed with status ${response.status}`);
+            })
+            .then(response => {
+                if (response.ok) {
+                    log(`✅ Successfully sent "${deviceName}" to Max!`);
+                    updateStatus('connected', `Connected to ${serverIP}:8080`);
+                    return response.text();
+                } else {
+                    throw new Error(`Server responded with status ${response.status}`);
                 }
-                return response.text();
+            })
+            .then(data => {
+                log(`Server response: ${data}`);
+            })
+            .catch(error => {
+                log(`❌ Error sending to Max: ${error.message}`);
+                updateStatus('disconnected', `Connection failed: ${error.message}`);
             });
         }
 
@@ -636,39 +598,25 @@
                 return;
             }
             
-            log(`Testing connection to ${serverIP}...`);
+            log(`Testing connection to ${serverIP}:8080...`);
             updateStatus('testing', 'Testing connection...');
             
-            // Try HTTPS ping first, then HTTP
-            fetch(`https://${serverIP}:8443/ping`)
+            fetch(`http://${serverIP}:8080/ping`)
                 .then(response => {
                     if (response.ok) {
-                        return response.json().then(data => ({protocol: 'HTTPS', port: 8443, data}));
+                        return response.json();
                     } else {
-                        throw new Error('HTTPS ping failed');
+                        throw new Error(`Server responded with status ${response.status}`);
                     }
                 })
-                .catch(httpsError => {
-                    log('HTTPS ping failed, trying HTTP...');
-                    return fetch(`http://${serverIP}:8080/ping`)
-                        .then(response => {
-                            if (response.ok) {
-                                return response.json().then(data => ({protocol: 'HTTP', port: 8080, data}));
-                            } else {
-                                throw new Error('HTTP ping failed');
-                            }
-                        });
-                })
-                .then(result => {
-                    log(`✅ Connected via ${result.protocol}! Response:`, result.data);
-                    updateStatus('connected', `Connected to ${serverIP}:${result.port} (${result.protocol})`);
+                .then(data => {
+                    log(`✅ Connected to Max server! Response:`, data);
+                    updateStatus('connected', `Connected to ${serverIP}:8080`);
                     isConnected = true;
-                    connectedProtocol = result.protocol;
-                    connectedPort = result.port;
                 })
                 .catch(error => {
                     log(`❌ Connection failed: ${error.message}`);
-                    updateStatus('disconnected', `Connection failed - make sure Max is running on ${serverIP}`);
+                    updateStatus('disconnected', `Connection failed - make sure Max device is loaded`);
                     isConnected = false;
                 });
         }
@@ -680,7 +628,7 @@
                 return;
             }
             
-            log(`Manual connection to ${serverIP}...`);
+            log(`Manual connection to ${serverIP}:8080...`);
             autoConnect();
         }
 
