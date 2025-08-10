@@ -259,10 +259,11 @@
                 <h3>Connection</h3>
                 <div class="connection-status">
                     <div class="status-dot" id="statusDot"></div>
-                    <span id="connectionText">Connecting to Ableton...</span>
+                    <span id="connectionText">Enter IP address to connect</span>
                 </div>
-                <input type="text" id="abletonIP" placeholder="Ableton IP" value="127.0.0.1">
+                <input type="text" id="abletonIP" placeholder="Computer IP (e.g., 10.20.53.3)" value="">
                 <button onclick="connect()">Connect</button>
+                <button onclick="autoConnect()">Auto-Scan</button>
             </div>
 
             <div class="control-section">
