@@ -70,10 +70,20 @@
             height: 12px;
             border-radius: 50%;
             background: #ff4757;
+            animation: pulse 2s infinite;
         }
 
         .status-dot.connected {
             background: #2ed573;
+        }
+
+        .status-dot.testing {
+            background: #ffa502;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .add-device-form {
@@ -205,11 +215,6 @@
             display: flex;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 1; }
-        }
-
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -333,7 +338,7 @@
     </div>
 
     <script>
-        // FIXED: Updated networking to work with local node.js server
+        // COMPLETE HTTPS/HTTP FALLBACK WEB APP
         
         // Default devices from your Max patch
         const DEFAULT_DEVICES = {
@@ -364,6 +369,8 @@
         let devices = {};
         let isConnected = false;
         let currentTab = 'instruments';
+        let connectedProtocol = 'HTTP';
+        let connectedPort = 8080;
 
         // Initialize everything
         function init() {
@@ -376,10 +383,7 @@
             renderAllDevices();
             loadPresets();
             
-            // Don't auto-connect on startup - let user enter their IP first
             log('Initialization complete - ready for connection');
-            
-            log('Initialization complete');
         }
 
         function loadDevices() {
@@ -539,19 +543,16 @@
             log(`Loading device: ${deviceName}`);
         }
 
-        // FIXED: Updated networking functions to work with your local server
+        // HTTPS/HTTP FALLBACK FUNCTIONALITY
         function sendToMax(deviceName) {
-            // Get the current server IP from the input field
             const serverIP = document.getElementById('abletonIP').value.trim();
             
             if (!serverIP) {
-                alert('Please enter your computer\'s IP address first!');
+                alert('Please enter your computer\'s IP address and connect first!');
                 return;
             }
             
-            log(`Sending device "${deviceName}" to server at ${serverIP}:8080`);
-            
-            // Send to the user's computer running Max
+            log(`Sending device "${deviceName}" to server at ${serverIP}`);
             sendViaHTTP(deviceName, serverIP);
         }
 
@@ -561,37 +562,126 @@
                 return;
             }
             
-            const url = `http://${serverIP}:8080/load`;
-            
             const requestData = {
                 device: deviceName
             };
             
-            log(`Sending POST to ${url} with data:`, requestData);
+            log(`Sending POST with data:`, requestData);
             
-            fetch(url, {
+            // Try HTTPS first, then fallback to HTTP
+            tryHTTPS(serverIP, requestData)
+                .then(result => {
+                    log(`✅ Successfully sent "${deviceName}" to Max via HTTPS!`);
+                    updateStatus('connected', `Connected to ${serverIP}:8443 (HTTPS)`);
+                    connectedProtocol = 'HTTPS';
+                    connectedPort = 8443;
+                })
+                .catch(httpsError => {
+                    log('HTTPS failed, trying HTTP...');
+                    return tryHTTP(serverIP, requestData)
+                        .then(result => {
+                            log(`✅ Successfully sent "${deviceName}" to Max via HTTP!`);
+                            updateStatus('connected', `Connected to ${serverIP}:8080 (HTTP)`);
+                            connectedProtocol = 'HTTP';
+                            connectedPort = 8080;
+                        });
+                })
+                .catch(error => {
+                    log(`❌ Error sending to Max: ${error.message}`);
+                    updateStatus('disconnected', `Connection failed: ${error.message}`);
+                });
+        }
+
+        function tryHTTPS(serverIP, requestData) {
+            const url = `https://${serverIP}:8443/load`;
+            log(`Trying HTTPS: ${url}`);
+            
+            return fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(requestData)
-            })
-            .then(response => {
-                if (response.ok) {
-                    log(`✅ Successfully sent "${deviceName}" to Max!`);
-                    updateStatus('connected', `Connected to ${serverIP}:8080`);
-                    return response.text();
-                } else {
-                    throw new Error(`Server responded with status ${response.status}`);
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTPS failed with status ${response.status}`);
                 }
-            })
-            .then(data => {
-                log(`Server response: ${data}`);
-            })
-            .catch(error => {
-                log(`❌ Error sending to Max: ${error.message}`);
-                updateStatus('disconnected', `Connection failed: ${error.message}`);
+                return response.text();
             });
+        }
+
+        function tryHTTP(serverIP, requestData) {
+            const url = `http://${serverIP}:8080/load`;
+            log(`Trying HTTP: ${url}`);
+            
+            return fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP failed with status ${response.status}`);
+                }
+                return response.text();
+            });
+        }
+
+        function autoConnect() {
+            const serverIP = document.getElementById('abletonIP').value.trim();
+            
+            if (!serverIP) {
+                alert('Please enter your computer\'s IP address first');
+                return;
+            }
+            
+            log(`Testing connection to ${serverIP}...`);
+            updateStatus('testing', 'Testing connection...');
+            
+            // Try HTTPS ping first, then HTTP
+            fetch(`https://${serverIP}:8443/ping`)
+                .then(response => {
+                    if (response.ok) {
+                        return response.json().then(data => ({protocol: 'HTTPS', port: 8443, data}));
+                    } else {
+                        throw new Error('HTTPS ping failed');
+                    }
+                })
+                .catch(httpsError => {
+                    log('HTTPS ping failed, trying HTTP...');
+                    return fetch(`http://${serverIP}:8080/ping`)
+                        .then(response => {
+                            if (response.ok) {
+                                return response.json().then(data => ({protocol: 'HTTP', port: 8080, data}));
+                            } else {
+                                throw new Error('HTTP ping failed');
+                            }
+                        });
+                })
+                .then(result => {
+                    log(`✅ Connected via ${result.protocol}! Response:`, result.data);
+                    updateStatus('connected', `Connected to ${serverIP}:${result.port} (${result.protocol})`);
+                    isConnected = true;
+                    connectedProtocol = result.protocol;
+                    connectedPort = result.port;
+                })
+                .catch(error => {
+                    log(`❌ Connection failed: ${error.message}`);
+                    updateStatus('disconnected', `Connection failed - make sure Max is running on ${serverIP}`);
+                    isConnected = false;
+                });
+        }
+
+        function connect() {
+            const serverIP = document.getElementById('abletonIP').value.trim();
+            if (!serverIP) {
+                alert('Please enter an IP address');
+                return;
+            }
+            
+            log(`Manual connection to ${serverIP}...`);
+            autoConnect();
         }
 
         function findMyIP() {
@@ -615,48 +705,6 @@
             message += '• Look for "IPv4 Address" or "inet"';
             
             alert(message);
-        }
-
-        function autoConnect() {
-            const serverIP = document.getElementById('abletonIP').value.trim();
-            
-            if (!serverIP) {
-                alert('Please enter your computer\'s IP address first');
-                return;
-            }
-            
-            log(`Testing connection to ${serverIP}:8080...`);
-            updateStatus('testing', 'Testing connection...');
-            
-            fetch(`http://${serverIP}:8080/ping`)
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        throw new Error(`Server responded with status ${response.status}`);
-                    }
-                })
-                .then(data => {
-                    log(`✅ Connected to Max server! Response:`, data);
-                    updateStatus('connected', `Connected to ${serverIP}:8080`);
-                    isConnected = true;
-                })
-                .catch(error => {
-                    log(`❌ Connection failed: ${error.message}`);
-                    updateStatus('disconnected', `Connection failed - make sure Max is running on ${serverIP}`);
-                    isConnected = false;
-                });
-        }
-
-        function connect() {
-            const serverIP = document.getElementById('abletonIP').value.trim();
-            if (!serverIP) {
-                alert('Please enter an IP address');
-                return;
-            }
-            
-            log(`Manual connection to ${serverIP}:8080...`);
-            autoConnect();
         }
 
         function updateStatus(status, text) {
