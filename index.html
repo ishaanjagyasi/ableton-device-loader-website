@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -118,13 +118,6 @@
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
-        .preset-controls {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
         .tabs {
             display: flex;
             gap: 5px;
@@ -237,6 +230,15 @@
             font-size: 12px;
         }
 
+        .session-id {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
         @media (max-width: 768px) {
             .controls-panel {
                 grid-template-columns: 1fr;
@@ -244,10 +246,6 @@
             
             .device-grid {
                 grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            }
-            
-            .preset-controls {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -258,23 +256,25 @@
             <h1>Ableton Device Loader</h1>
             <p>Universal remote control for Ableton Live devices</p>
             <p style="font-size: 14px; opacity: 0.8; margin-top: 10px;">
-                📱 Use from any device → 💻 Control any computer running Max for Live
+                📱 Cloud-powered - works from anywhere with internet
             </p>
         </div>
 
         <div class="controls-panel">
             <div class="control-section">
-                <h3>Connection</h3>
+                <h3>Session</h3>
                 <div class="connection-status">
                     <div class="status-dot" id="statusDot"></div>
-                    <span id="connectionText">Enter your computer's IP address to connect</span>
+                    <span id="connectionText">Connecting to cloud database...</span>
                 </div>
-                <input type="text" id="abletonIP" placeholder="Your computer's IP address (e.g., 192.168.1.100)" value="">
-                <button onclick="connect()">Connect</button>
-                <button onclick="findMyIP()">Find My IP</button>
-                <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
-                    💡 On your computer: Open Terminal/CMD → Type "ipconfig" (Windows) or "ifconfig" (Mac) → Look for your local IP
+                <div class="session-id">
+                    <div>Session ID: <span id="sessionId">Generating...</span></div>
+                    <div style="font-size: 10px; opacity: 0.7; margin-top: 5px;">
+                        Share this ID with your Max device
+                    </div>
                 </div>
+                <button onclick="generateNewSession()">New Session</button>
+                <button onclick="testConnection()">Test Connection</button>
             </div>
 
             <div class="control-section">
@@ -290,23 +290,6 @@
                     <option value="custom">Custom</option>
                 </select>
             </div>
-        </div>
-
-        <div class="control-section">
-            <h3>Presets</h3>
-            <div class="preset-controls">
-                <input type="text" id="presetName" placeholder="Preset name">
-                <button onclick="savePreset()">Save Preset</button>
-                <button onclick="resetToDefault()">Reset to Default</button>
-            </div>
-            <div class="preset-controls">
-                <select id="presetSelect" onchange="loadPreset()">
-                    <option value="">Select preset...</option>
-                </select>
-                <button onclick="exportPreset()">Export</button>
-                <button onclick="document.getElementById('importFile').click()">Import</button>
-            </div>
-            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importPreset()">
         </div>
 
         <div class="tabs">
@@ -337,9 +320,25 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
     <script>
-        // COMPLETE SIMPLE HTTP-ONLY WEB APP
-        
+        // Firebase configuration - YOUR REAL CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyB0_6KxIa40hjrMBXIAFSmq-DbM0n3dV4c",
+            authDomain: "ableton-device-loader.firebaseapp.com",
+            projectId: "ableton-device-loader",
+            storageBucket: "ableton-device-loader.firebasestorage.app",
+            messagingSenderId: "98237079129",
+            appId: "1:98237079129:web:6806e8fa30eea38876d5e8"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         // Default devices from your Max patch
         const DEFAULT_DEVICES = {
             instruments: [
@@ -369,19 +368,57 @@
         let devices = {};
         let isConnected = false;
         let currentTab = 'instruments';
+        let sessionId = '';
 
         // Initialize everything
         function init() {
             log('Starting initialization...');
+            
+            // Generate or load session ID
+            sessionId = localStorage.getItem('abletonSessionId') || generateSessionId();
+            localStorage.setItem('abletonSessionId', sessionId);
+            document.getElementById('sessionId').textContent = sessionId;
             
             // Load devices
             loadDevices();
             
             // Render UI
             renderAllDevices();
-            loadPresets();
             
-            log('Initialization complete - ready for connection');
+            // Test Firebase connection
+            testConnection();
+            
+            log('Initialization complete');
+        }
+
+        function generateSessionId() {
+            return 'session_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function generateNewSession() {
+            sessionId = generateSessionId();
+            localStorage.setItem('abletonSessionId', sessionId);
+            document.getElementById('sessionId').textContent = sessionId;
+            log('Generated new session: ' + sessionId);
+        }
+
+        function testConnection() {
+            log('Testing Firebase connection...');
+            updateStatus('testing', 'Testing cloud connection...');
+            
+            // Try to write a test document
+            db.collection('test').doc('connection').set({
+                timestamp: new Date(),
+                status: 'testing'
+            }).then(() => {
+                log('✅ Firebase connection successful!');
+                updateStatus('connected', 'Connected to cloud database');
+                isConnected = true;
+            }).catch((error) => {
+                log('❌ Firebase connection failed: ' + error.message);
+                updateStatus('disconnected', 'Cloud connection failed');
+                isConnected = false;
+            });
         }
 
         function loadDevices() {
@@ -518,16 +555,12 @@
             }
         }
 
-        function resetToDefault() {
-            if (confirm('Reset to default devices? This will replace all current devices.')) {
-                devices = JSON.parse(JSON.stringify(DEFAULT_DEVICES));
-                saveDevices();
-                renderAllDevices();
-                log('Reset to default devices');
-            }
-        }
-
         function loadDevice(deviceName) {
+            if (!isConnected) {
+                alert('Not connected to cloud database. Check your internet connection.');
+                return;
+            }
+
             // Visual feedback
             const btn = Array.from(document.querySelectorAll('.device-btn')).find(b => 
                 b.textContent.includes(deviceName)
@@ -537,122 +570,20 @@
                 setTimeout(() => btn.classList.remove('loading'), 2000);
             }
             
-            sendToMax(deviceName);
-            log(`Loading device: ${deviceName}`);
-        }
-
-        // SIMPLE HTTP-ONLY FUNCTIONALITY
-        function sendToMax(deviceName) {
-            const serverIP = document.getElementById('abletonIP').value.trim();
+            log(`Sending device "${deviceName}" to cloud...`);
             
-            if (!serverIP) {
-                alert('Please enter your computer\'s IP address and connect first!');
-                return;
-            }
-            
-            log(`Sending device "${deviceName}" to server at ${serverIP}:8080`);
-            sendViaHTTP(deviceName, serverIP);
-        }
-
-        function sendViaHTTP(deviceName, serverIP) {
-            if (!serverIP) {
-                alert('Please enter your computer\'s IP address and connect first');
-                return;
-            }
-            
-            const url = `http://${serverIP}:8080/load`;
-            const requestData = { device: deviceName };
-            
-            log(`Sending POST to ${url} with data:`, requestData);
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestData)
-            })
-            .then(response => {
-                if (response.ok) {
-                    log(`✅ Successfully sent "${deviceName}" to Max!`);
-                    updateStatus('connected', `Connected to ${serverIP}:8080`);
-                    return response.text();
-                } else {
-                    throw new Error(`Server responded with status ${response.status}`);
-                }
-            })
-            .then(data => {
-                log(`Server response: ${data}`);
-            })
-            .catch(error => {
-                log(`❌ Error sending to Max: ${error.message}`);
-                updateStatus('disconnected', `Connection failed: ${error.message}`);
+            // Send device request to Firebase
+            db.collection('device_requests').add({
+                sessionId: sessionId,
+                device: deviceName,
+                timestamp: new Date(),
+                status: 'pending',
+                source: 'web_app'
+            }).then((docRef) => {
+                log(`✅ Device request sent: ${deviceName} (ID: ${docRef.id})`);
+            }).catch((error) => {
+                log(`❌ Error sending device request: ${error.message}`);
             });
-        }
-
-        function autoConnect() {
-            const serverIP = document.getElementById('abletonIP').value.trim();
-            
-            if (!serverIP) {
-                alert('Please enter your computer\'s IP address first');
-                return;
-            }
-            
-            log(`Testing connection to ${serverIP}:8080...`);
-            updateStatus('testing', 'Testing connection...');
-            
-            fetch(`http://${serverIP}:8080/ping`)
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        throw new Error(`Server responded with status ${response.status}`);
-                    }
-                })
-                .then(data => {
-                    log(`✅ Connected to Max server! Response:`, data);
-                    updateStatus('connected', `Connected to ${serverIP}:8080`);
-                    isConnected = true;
-                })
-                .catch(error => {
-                    log(`❌ Connection failed: ${error.message}`);
-                    updateStatus('disconnected', `Connection failed - make sure Max device is loaded`);
-                    isConnected = false;
-                });
-        }
-
-        function connect() {
-            const serverIP = document.getElementById('abletonIP').value.trim();
-            if (!serverIP) {
-                alert('Please enter an IP address');
-                return;
-            }
-            
-            log(`Manual connection to ${serverIP}:8080...`);
-            autoConnect();
-        }
-
-        function findMyIP() {
-            log('Attempting to detect local IP addresses...');
-            
-            // Show some common IP ranges to try
-            const commonIPs = [
-                '192.168.1.',
-                '192.168.0.',
-                '10.0.0.',
-                '172.16.0.'
-            ];
-            
-            let message = 'Common IP address patterns:\n\n';
-            commonIPs.forEach(ip => {
-                message += `${ip}XXX (try ${ip}100, ${ip}101, etc.)\n`;
-            });
-            message += '\n💡 On your computer:\n';
-            message += '• Windows: Open CMD → type "ipconfig"\n';
-            message += '• Mac: Open Terminal → type "ifconfig"\n';
-            message += '• Look for "IPv4 Address" or "inet"';
-            
-            alert(message);
         }
 
         function updateStatus(status, text) {
@@ -668,90 +599,6 @@
                 }
             }
             if (textEl) textEl.textContent = text;
-        }
-
-        // Preset functions
-        function savePreset() {
-            const name = document.getElementById('presetName').value.trim();
-            if (!name) {
-                alert('Please enter a preset name');
-                return;
-            }
-            
-            const presets = JSON.parse(localStorage.getItem('abletonPresets') || '{}');
-            presets[name] = JSON.parse(JSON.stringify(devices));
-            localStorage.setItem('abletonPresets', JSON.stringify(presets));
-            
-            loadPresets();
-            document.getElementById('presetName').value = '';
-            log(`Saved preset: ${name}`);
-        }
-
-        function loadPresets() {
-            const presets = JSON.parse(localStorage.getItem('abletonPresets') || '{}');
-            const select = document.getElementById('presetSelect');
-            if (select) {
-                select.innerHTML = '<option value="">Select preset...</option>';
-                Object.keys(presets).forEach(name => {
-                    const option = document.createElement('option');
-                    option.value = name;
-                    option.textContent = name;
-                    select.appendChild(option);
-                });
-            }
-        }
-
-        function loadPreset() {
-            const name = document.getElementById('presetSelect').value;
-            if (!name) return;
-            
-            const presets = JSON.parse(localStorage.getItem('abletonPresets') || '{}');
-            if (presets[name]) {
-                devices = JSON.parse(JSON.stringify(presets[name]));
-                saveDevices();
-                renderAllDevices();
-                log(`Loaded preset: ${name}`);
-            }
-        }
-
-        function exportPreset() {
-            const name = document.getElementById('presetName').value.trim() || 'MyPreset';
-            const data = {
-                name: name,
-                devices: devices,
-                exported: new Date().toISOString()
-            };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${name}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            log(`Exported preset: ${name}`);
-        }
-
-        function importPreset() {
-            const file = document.getElementById('importFile').files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (data.devices) {
-                        devices = data.devices;
-                        saveDevices();
-                        renderAllDevices();
-                        log(`Imported preset: ${data.name || 'Unknown'}`);
-                    }
-                } catch (error) {
-                    alert('Invalid preset file');
-                }
-            };
-            reader.readAsText(file);
         }
 
         function log(message, data = null) {
