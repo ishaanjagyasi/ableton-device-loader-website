@@ -1,4 +1,4 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -256,7 +256,7 @@
             <h1>Ableton Device Loader</h1>
             <p>Universal remote control for Ableton Live devices</p>
             <p style="font-size: 14px; opacity: 0.8; margin-top: 10px;">
-                📱 Cloud-powered - works from anywhere with internet
+                📱 Realtime Database - instant device loading
             </p>
         </div>
 
@@ -265,7 +265,7 @@
                 <h3>Session</h3>
                 <div class="connection-status">
                     <div class="status-dot" id="statusDot"></div>
-                    <span id="connectionText">Connecting to cloud database...</span>
+                    <span id="connectionText">Connecting to realtime database...</span>
                 </div>
                 <div class="session-id">
                     <div>Session ID: <span id="sessionId">Generating...</span></div>
@@ -320,24 +320,17 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
     <script>
-        // Firebase configuration - YOUR REAL CONFIG
+        // Firebase Realtime Database configuration - YOUR REAL CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyB0_6KxIa40hjrMBXIAFSmq-DbM0n3dV4c",
             authDomain: "ableton-device-loader.firebaseapp.com",
             projectId: "ableton-device-loader",
+            databaseURL: "https://ableton-device-loader-default-rtdb.firebaseio.com",
             storageBucket: "ableton-device-loader.firebasestorage.app",
             messagingSenderId: "98237079129",
             appId: "1:98237079129:web:6806e8fa30eea38876d5e8"
         };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
 
         // Default devices from your Max patch
         const DEFAULT_DEVICES = {
@@ -385,7 +378,7 @@
             // Render UI
             renderAllDevices();
             
-            // Test Firebase connection
+            // Test Realtime Database connection
             testConnection();
             
             log('Initialization complete');
@@ -403,20 +396,32 @@
         }
 
         function testConnection() {
-            log('Testing Firebase connection...');
-            updateStatus('testing', 'Testing cloud connection...');
+            log('Testing Firebase Realtime Database connection...');
+            updateStatus('testing', 'Testing realtime database...');
             
-            // Try to write a test document
-            db.collection('test').doc('connection').set({
-                timestamp: new Date(),
-                status: 'testing'
-            }).then(() => {
-                log('✅ Firebase connection successful!');
-                updateStatus('connected', 'Connected to cloud database');
-                isConnected = true;
+            // Try to write a test value to Realtime Database
+            const testUrl = `${firebaseConfig.databaseURL}/test.json`;
+            
+            fetch(testUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    timestamp: new Date().toISOString(),
+                    test: 'connection'
+                })
+            }).then(response => {
+                if (response.ok) {
+                    log('✅ Firebase Realtime Database connection successful!');
+                    updateStatus('connected', 'Connected to realtime database');
+                    isConnected = true;
+                } else {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
             }).catch((error) => {
-                log('❌ Firebase connection failed: ' + error.message);
-                updateStatus('disconnected', 'Cloud connection failed');
+                log('❌ Firebase Realtime Database connection failed: ' + error.message);
+                updateStatus('disconnected', 'Realtime database connection failed');
                 isConnected = false;
             });
         }
@@ -557,7 +562,12 @@
 
         function loadDevice(deviceName) {
             if (!isConnected) {
-                alert('Not connected to cloud database. Check your internet connection.');
+                alert('Not connected to realtime database. Check your internet connection.');
+                return;
+            }
+
+            if (!sessionId) {
+                alert('No session ID available!');
                 return;
             }
 
@@ -570,17 +580,27 @@
                 setTimeout(() => btn.classList.remove('loading'), 2000);
             }
             
-            log(`Sending device "${deviceName}" to cloud...`);
+            log(`Sending device "${deviceName}" to realtime database...`);
             
-            // Send device request to Firebase
-            db.collection('device_requests').add({
-                sessionId: sessionId,
-                device: deviceName,
-                timestamp: new Date(),
-                status: 'pending',
-                source: 'web_app'
-            }).then((docRef) => {
-                log(`✅ Device request sent: ${deviceName} (ID: ${docRef.id})`);
+            // Generate unique request ID
+            const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            
+            // Send device request to Firebase Realtime Database
+            const realtimeUrl = `${firebaseConfig.databaseURL}/device_requests/${sessionId}/${requestId}.json`;
+            
+            fetch(realtimeUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(deviceName)
+            }).then(response => {
+                if (response.ok) {
+                    log(`✅ Device request sent: ${deviceName} (ID: ${requestId})`);
+                    log('⚡ Max should load this device instantly!');
+                } else {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
             }).catch((error) => {
                 log(`❌ Error sending device request: ${error.message}`);
             });
