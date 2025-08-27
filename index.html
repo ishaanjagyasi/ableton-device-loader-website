@@ -219,10 +219,21 @@
             display: none;
             align-items: center;
             justify-content: center;
+            z-index: 10;
         }
 
-        .device-btn:hover .remove-btn {
+        .edit-mode .device-btn .remove-btn {
             display: flex;
+        }
+
+        .edit-mode .device-btn {
+            border-color: #ff9a9e;
+            background: rgba(255, 154, 158, 0.1);
+        }
+
+        .edit-mode .device-btn:hover {
+            border-color: #ff4757;
+            background: rgba(255, 71, 87, 0.2);
         }
 
         .empty-state {
@@ -309,7 +320,12 @@
             </div>
 
             <div class="control-section">
-                <h3>Presets</h3>
+                <h3>Presets & Mode</h3>
+                <div class="mode-toggle" style="margin-bottom: 15px;">
+                    <button id="modeToggle" onclick="toggleEditMode()" style="background: #4ecdc4; font-size: 12px;">
+                        📝 Edit Mode: OFF
+                    </button>
+                </div>
                 <div class="preset-buttons">
                     <button onclick="exportPreset()">Export Preset</button>
                     <button onclick="importPreset()">Import Preset</button>
@@ -318,7 +334,7 @@
                 </div>
                 <input type="file" id="fileInput" class="file-input" accept=".json" onchange="handleFileImport(event)">
                 <div style="font-size: 10px; opacity: 0.7; margin-top: 8px;">
-                    Share your custom device presets
+                    Toggle edit mode to add/remove devices
                 </div>
             </div>
         </div>
@@ -393,6 +409,7 @@
         let isConnected = false;
         let currentTab = 'instruments';
         let sessionId = '';
+        let isEditMode = false;
 
         // Initialize everything
         function init() {
@@ -519,6 +536,14 @@
                 `;
                 btn.onclick = (e) => {
                     if (e.target.classList.contains('remove-btn')) return;
+                    
+                    // In edit mode, don't send device - just select for editing
+                    if (isEditMode) {
+                        // Could add selection highlighting here in the future
+                        return;
+                    }
+                    
+                    // In operational mode, send the device immediately
                     loadDevice(deviceName);
                 };
                 container.appendChild(btn);
@@ -635,6 +660,25 @@
             }).catch((error) => {
                 log(`❌ Error sending device request: ${error.message}`);
             });
+        }
+
+        // EDIT MODE FUNCTIONS
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const body = document.body;
+            const toggleBtn = document.getElementById('modeToggle');
+            
+            if (isEditMode) {
+                body.classList.add('edit-mode');
+                toggleBtn.innerHTML = '🔒 Edit Mode: ON';
+                toggleBtn.style.background = '#ff4757';
+                log('📝 Edit mode enabled - tap devices to remove them');
+            } else {
+                body.classList.remove('edit-mode');
+                toggleBtn.innerHTML = '📝 Edit Mode: OFF';
+                toggleBtn.style.background = '#4ecdc4';
+                log('⚡ Operational mode - tap devices to send them');
+            }
         }
 
         // PRESET FUNCTIONS
