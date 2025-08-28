@@ -12,50 +12,82 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            font-family: 'Helvetica Neue', 'Arial', sans-serif;
+            background: #000000;
+            color: #ffffff;
             min-height: 100vh;
             padding: 20px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
         }
 
         .container {
-            max-width: 1000px;
+            max-width: calc(100vw - 80px);
             margin: 0 auto;
+            padding: 0 40px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .controls-wrapper, .tabs-wrapper, .device-wrapper {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 25px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: left;
+            margin-bottom: 40px;
+            padding: 0;
+            background: transparent;
+            backdrop-filter: none;
+            border-radius: 0;
+            border: none;
+            border-bottom: 2px solid #ffffff;
+            padding-bottom: 20px;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 2.8em;
+            margin-bottom: 5px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+        }
+
+        .header p {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin: 0;
+            font-weight: 400;
         }
 
         .controls-panel {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 2px;
+            margin-bottom: 40px;
+            background: #ffffff;
+            padding: 2px;
+            outline: 2px solid #ffffff;
         }
 
         .control-section {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: #000000;
+            padding: 30px;
+            border: none;
+            border-radius: 0;
+            position: relative;
         }
 
         .control-section h3 {
-            margin-bottom: 15px;
-            color: #4ecdc4;
+            margin-bottom: 20px;
+            color: #ffffff;
+            font-size: 0.85em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
         }
 
         .connection-status {
@@ -66,19 +98,19 @@
         }
 
         .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #ff4757;
-            animation: pulse 2s infinite;
+            width: 8px;
+            height: 8px;
+            border-radius: 0;
+            background: #666666;
+            animation: none;
         }
 
         .status-dot.connected {
-            background: #2ed573;
+            background: #ffffff;
         }
 
         .status-dot.testing {
-            background: #ffa502;
+            background: #666666;
         }
 
         @keyframes pulse {
@@ -94,41 +126,63 @@
         }
 
         input, select, button {
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
+            padding: 15px 20px;
+            border: 2px solid #ffffff;
+            border-radius: 0;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease;
         }
 
         input, select {
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
+            background: #000000;
+            color: #ffffff;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            background: #ffffff;
+            color: #000000;
         }
 
         button {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
+            background: #ffffff;
+            color: #000000;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
             white-space: nowrap;
         }
 
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: #000000;
+            color: #ffffff;
+            transform: none;
+            box-shadow: none;
         }
 
         .preset-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            grid-template-rows: 1fr 1fr;
+            gap: 2px;
             margin-bottom: 10px;
+            background: #ffffff;
+            padding: 2px;
         }
 
         .preset-buttons button {
             font-size: 12px;
             padding: 8px;
+            margin: 0;
+            background: #000000;
+            color: #ffffff;
+            border: none;
+        }
+
+        .preset-buttons button:hover {
+            background: #ffffff;
+            color: #000000;
         }
 
         .file-input {
@@ -137,50 +191,66 @@
 
         .tabs {
             display: flex;
-            gap: 5px;
-            margin-bottom: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 5px;
-            border-radius: 10px;
+            gap: 2px;
+            margin-bottom: 30px;
+            background: #ffffff;
+            padding: 2px;
         }
 
         .tab-btn {
             flex: 1;
-            padding: 12px;
-            background: transparent;
+            padding: 20px;
+            background: #000000;
             border: none;
-            color: rgba(255, 255, 255, 0.7);
-            border-radius: 6px;
+            color: #ffffff;
+            border-radius: 0;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 12px;
         }
 
         .tab-btn.active {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .tab-btn:hover {
+            background: #333333;
+            color: #ffffff;
+        }
+
+        .tab-btn.active:hover {
+            background: #ffffff;
+            color: #000000;
         }
 
         .device-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-            min-height: 200px;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 2px;
+            margin-bottom: 30px;
+            min-height: 300px;
+            background: #ffffff;
+            padding: 2px;
         }
 
         .device-btn {
-            padding: 18px 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            color: white;
+            padding: 30px 20px;
+            background: #000000;
+            border: none;
+            border-radius: 0;
+            color: #ffffff;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             text-align: center;
-            font-weight: 500;
-            font-size: 14px;
-            min-height: 70px;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            min-height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -188,33 +258,36 @@
         }
 
         .device-btn:hover {
-            transform: translateY(-3px);
-            background: rgba(255, 255, 255, 0.2);
-            border-color: #4ecdc4;
-            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.3);
+            background: #ffffff;
+            color: #000000;
+            transform: none;
+            border-color: transparent;
+            box-shadow: none;
         }
 
         .device-btn:active {
-            transform: translateY(-1px);
-            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            background: #333333;
+            color: #ffffff;
+            transform: none;
         }
 
         .device-btn.loading {
-            background: linear-gradient(45deg, #ff9a9e, #fecfef);
-            animation: pulse 1s infinite;
+            background: #333333;
+            animation: none;
         }
 
         .device-btn .remove-btn {
             position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 20px;
-            height: 20px;
-            background: #ff4757;
-            border-radius: 50%;
+            top: 5px;
+            right: 5px;
+            width: 25px;
+            height: 25px;
+            background: #ffffff;
+            border-radius: 0;
             border: none;
-            color: white;
-            font-size: 12px;
+            color: #000000;
+            font-size: 14px;
+            font-weight: 900;
             cursor: pointer;
             display: none;
             align-items: center;
@@ -227,13 +300,14 @@
         }
 
         .edit-mode .device-btn {
-            border-color: #ff9a9e;
-            background: rgba(255, 154, 158, 0.1);
+            border: 2px solid #ffffff;
+            background: #000000;
         }
 
         .edit-mode .device-btn:hover {
-            border-color: #ff4757;
-            background: rgba(255, 71, 87, 0.2);
+            border-color: #ffffff;
+            background: #333333;
+            color: #ffffff;
         }
 
         .empty-state {
@@ -259,21 +333,59 @@
         }
 
         .session-id {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
+            background: #ffffff;
+            color: #000000;
+            padding: 15px;
+            border-radius: 0;
+            margin-bottom: 20px;
             font-family: 'Courier New', monospace;
-            font-size: 12px;
+            font-weight: 600;
+            border: none;
+        }
+
+        .session-id div:first-child {
+            font-size: 14px;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .session-id div:last-child {
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            background: #ffffff;
+            padding: 2px;
+        }
+
+        .button-grid button {
+            margin: 0;
+            background: #000000;
+            color: #ffffff;
+            border: none;
+        }
+
+        .button-grid button:hover {
+            background: #ffffff;
+            color: #000000;
         }
 
         @media (max-width: 768px) {
             .controls-panel {
                 grid-template-columns: 1fr;
+                gap: 2px;
             }
             
             .device-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .header h1 {
+                font-size: 2.2em;
             }
         }
     </style>
@@ -282,84 +394,88 @@
     <div class="container">
         <div class="header">
             <h1>Ableton Device Loader</h1>
-            <p>Universal remote control for Ableton Live devices</p>
-            <p style="font-size: 14px; opacity: 0.8; margin-top: 10px;">
-                📱 Realtime Database - instant device loading
-            </p>
         </div>
 
-        <div class="controls-panel">
-            <div class="control-section">
-                <h3>Session</h3>
-                <div class="connection-status">
-                    <div class="status-dot" id="statusDot"></div>
-                    <span id="connectionText">Connecting to realtime database...</span>
-                </div>
-                <div class="session-id">
-                    <div>Session ID: <span id="sessionId">Generating...</span></div>
-                    <div style="font-size: 10px; opacity: 0.7; margin-top: 5px;">
-                        Share this ID with your Max device
+        <div class="controls-wrapper">
+            <div class="controls-panel">
+                <div class="control-section">
+                    <h3>Session</h3>
+                    <div class="connection-status">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span id="connectionText">Connecting to realtime database...</span>
+                    </div>
+                    <div class="session-id">
+                        <div>Session ID: <span id="sessionId">Generating...</span></div>
+                        <div style="font-size: 10px; opacity: 0.7; margin-top: 5px;">
+                            Share this ID with your Max device
+                        </div>
+                    </div>
+                    <div class="button-grid">
+                        <button onclick="generateNewSession()">New Session</button>
+                        <button onclick="testConnection()">Test Connection</button>
                     </div>
                 </div>
-                <button onclick="generateNewSession()">New Session</button>
-                <button onclick="testConnection()">Test Connection</button>
-            </div>
 
-            <div class="control-section">
-                <h3>Add Device</h3>
-                <div class="add-device-form">
-                    <input type="text" id="deviceName" placeholder="Device name (e.g., Operator)">
-                    <button onclick="addDevice()">Add</button>
+                <div class="control-section">
+                    <h3>Add Device</h3>
+                    <div class="add-device-form">
+                        <input type="text" id="deviceName" placeholder="Device name (e.g., Operator)">
+                        <button onclick="addDevice()">Add</button>
+                    </div>
+                    <select id="categorySelect">
+                        <option value="instruments">Instruments</option>
+                        <option value="audio_effects">Audio Effects</option>
+                        <option value="midi_effects">MIDI Effects</option>
+                        <option value="custom">Custom</option>
+                    </select>
                 </div>
-                <select id="categorySelect">
-                    <option value="instruments">Instruments</option>
-                    <option value="audio_effects">Audio Effects</option>
-                    <option value="midi_effects">MIDI Effects</option>
-                    <option value="custom">Custom</option>
-                </select>
-            </div>
 
-            <div class="control-section">
-                <h3>Presets & Mode</h3>
-                <div class="mode-toggle" style="margin-bottom: 15px;">
-                    <button id="modeToggle" onclick="toggleEditMode()" style="background: #4ecdc4; font-size: 12px;">
-                        📝 Edit Mode: OFF
-                    </button>
-                </div>
-                <div class="preset-buttons">
-                    <button onclick="exportPreset()">Export Preset</button>
-                    <button onclick="importPreset()">Import Preset</button>
-                    <button onclick="resetToDefault()">Reset to Default</button>
-                    <button onclick="clearAll()">Clear All</button>
-                </div>
-                <input type="file" id="fileInput" class="file-input" accept=".json" onchange="handleFileImport(event)">
-                <div style="font-size: 10px; opacity: 0.7; margin-top: 8px;">
-                    Toggle edit mode to add/remove devices
+                <div class="control-section">
+                    <h3>Presets & Mode</h3>
+                    <div class="mode-toggle" style="margin-bottom: 15px;">
+                        <button id="modeToggle" onclick="toggleEditMode()" style="background: #ffffff; color: #000000; font-size: 12px;">
+                            EDIT MODE: OFF
+                        </button>
+                    </div>
+                    <div class="preset-buttons">
+                        <button onclick="exportPreset()">Export Preset</button>
+                        <button onclick="importPreset()">Import Preset</button>
+                        <button onclick="resetToDefault()">Reset to Default</button>
+                        <button onclick="clearAll()">Clear All</button>
+                    </div>
+                    <input type="file" id="fileInput" class="file-input" accept=".json" onchange="handleFileImport(event)">
+                    <div style="font-size: 10px; opacity: 0.7; margin-top: 8px;">
+                        Toggle edit mode to add/remove devices
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('instruments')">Instruments</button>
-            <button class="tab-btn" onclick="showTab('audio_effects')">Audio Effects</button>
-            <button class="tab-btn" onclick="showTab('midi_effects')">MIDI Effects</button>
-            <button class="tab-btn" onclick="showTab('custom')">Custom</button>
+        <div class="tabs-wrapper">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('instruments')">Instruments</button>
+                <button class="tab-btn" onclick="showTab('audio_effects')">Audio Effects</button>
+                <button class="tab-btn" onclick="showTab('midi_effects')">MIDI Effects</button>
+                <button class="tab-btn" onclick="showTab('custom')">Custom</button>
+            </div>
         </div>
 
-        <div id="instruments" class="device-grid">
-            <!-- Will be populated by JavaScript -->
-        </div>
+        <div class="device-wrapper">
+            <div id="instruments" class="device-grid">
+                <!-- Will be populated by JavaScript -->
+            </div>
 
-        <div id="audio_effects" class="device-grid hidden">
-            <!-- Will be populated by JavaScript -->
-        </div>
+            <div id="audio_effects" class="device-grid hidden">
+                <!-- Will be populated by JavaScript -->
+            </div>
 
-        <div id="midi_effects" class="device-grid hidden">
-            <!-- Will be populated by JavaScript -->
-        </div>
+            <div id="midi_effects" class="device-grid hidden">
+                <!-- Will be populated by JavaScript -->
+            </div>
 
-        <div id="custom" class="device-grid hidden">
-            <!-- Will be populated by JavaScript -->
+            <div id="custom" class="device-grid hidden">
+                <!-- Will be populated by JavaScript -->
+            </div>
         </div>
 
         <div class="log" id="log">
@@ -670,14 +786,16 @@
             
             if (isEditMode) {
                 body.classList.add('edit-mode');
-                toggleBtn.innerHTML = '🔒 Edit Mode: ON';
-                toggleBtn.style.background = '#ff4757';
-                log('📝 Edit mode enabled - tap devices to remove them');
+                toggleBtn.innerHTML = 'EDIT MODE: ON';
+                toggleBtn.style.background = '#000000';
+                toggleBtn.style.color = '#ffffff';
+                log('Edit mode enabled - tap devices to remove them');
             } else {
                 body.classList.remove('edit-mode');
-                toggleBtn.innerHTML = '📝 Edit Mode: OFF';
-                toggleBtn.style.background = '#4ecdc4';
-                log('⚡ Operational mode - tap devices to send them');
+                toggleBtn.innerHTML = 'EDIT MODE: OFF';
+                toggleBtn.style.background = '#ffffff';
+                toggleBtn.style.color = '#000000';
+                log('Operational mode - tap devices to send them');
             }
         }
 
