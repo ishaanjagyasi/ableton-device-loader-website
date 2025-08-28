@@ -552,7 +552,7 @@
                 <div class="control-section">
                     <h3>Presets & Mode</h3>
                     <div class="mode-toggle">
-                        <button id="modeToggle" onclick="toggleEditMode()" style="background: #ffffff; color: #000000; font-size: 12px;">
+                        <button id="modeToggle" onclick="toggleEditMode()" style="background: #000000; color: #ffffff; font-size: 12px;">
                             EDIT MODE: OFF
                         </button>
                     </div>
@@ -906,14 +906,14 @@
             if (isEditMode) {
                 body.classList.add('edit-mode');
                 toggleBtn.innerHTML = 'EDIT MODE: ON';
-                toggleBtn.style.background = '#000000';
-                toggleBtn.style.color = '#ffffff';
+                toggleBtn.style.background = '#ffffff';
+                toggleBtn.style.color = '#000000';
                 log('Edit mode enabled - tap devices to remove them');
             } else {
                 body.classList.remove('edit-mode');
                 toggleBtn.innerHTML = 'EDIT MODE: OFF';
-                toggleBtn.style.background = '#ffffff';
-                toggleBtn.style.color = '#000000';
+                toggleBtn.style.background = '#000000';
+                toggleBtn.style.color = '#ffffff';
                 log('Operational mode - tap devices to send them');
             }
         }
